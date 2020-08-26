@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#!/usr/bin/env python
 
 try:
     import http.client as httplib
@@ -10,6 +11,7 @@ except ImportError:
 import json
 import re
 import socket
+import time
 
 from itertools import groupby
 from operator import itemgetter
@@ -123,7 +125,33 @@ class SocketNER(NER):
             if not isinstance(text, bytes):
                 text = text.encode('utf-8')
             s.sendall(text)
-            tagged_text = s.recv(10*len(text))
+            # tagged_text = s.recv(10*len(text))
+            
+            # timeout = 2         # Consider making this configurable?         
+            # lastResponse = time.time()
+            tagged_text = b''    # Response content will be appended as it is received.
+            while True:
+                # data = sock.recv(4096)
+                data = s.recv(65536)
+                if not data:
+                    break
+                tagged_text += data
+            # while True:
+            #     # If some data has already been received, bail after `timeout` seconds.
+            #     if len(tagged_text) > 0 and time.time() - lastResponse > timeout:
+            #         break
+
+            #     # Wait a bit longer if no data has been received, just in case.
+            #     elif time.time() - lastResponse > timeout * 2:
+            #         break
+
+            #     data = s.recv(4092) # Retrieve a small chunk of the response.
+            #     if data:
+            #         tagged_text += data
+            #         lastResponse = time.time()
+            #     else:               # Wait a bit before looking again.
+            #         time.sleep(0.01)
+
         return tagged_text.decode('utf-8')
 
 
@@ -169,5 +197,9 @@ class HttpNER(NER):
                 print("Failed to post HTTP request.")
                 raise e
         return tagged_text
+
+
+
+
 
 
